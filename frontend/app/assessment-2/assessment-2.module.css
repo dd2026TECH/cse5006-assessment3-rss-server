@@ -46,6 +46,30 @@
   padding-left: 1.25rem;
 }
 
+.tableWrap {
+  overflow-x: auto;
+  margin-top: 0.75rem;
+}
+
+.compareTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.compareTable th,
+.compareTable td {
+  text-align: left;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.compareTable th {
+  background: var(--surface-2);
+  font-weight: 600;
+}
+
 .links {
   display: flex;
   gap: 1rem;
