@@ -1,0 +1,5 @@
+timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect
+1786758722022,93,GET /api/health,200,OK,RSS Clients 1-1,text,true,,551,127,1,1,http://localhost:4080/api/health,87,0,26
+1786758722121,54,GET /api/feeds,200,OK,RSS Clients 1-1,text,true,,1319,126,1,1,http://localhost:4080/api/feeds,54,0,0
+1786758722176,69,GET /api/posts,200,OK,RSS Clients 1-1,text,true,,33386,126,1,1,http://localhost:4080/api/posts,69,0,0
+1786758722245,54,GET /api/feeds/rss.xml,200,OK,RSS Clients 1-1,text,true,,5430,153,1,1,http://localhost:4080/api/feeds/rss.xml?slug=build-journal,54,0,0
