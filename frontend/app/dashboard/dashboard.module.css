@@ -1,0 +1,185 @@
+.lede {
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.healthBanner {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1.1rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  font-weight: 500;
+  margin-bottom: 1.75rem;
+}
+
+.healthDot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.healthOk {
+  background: color-mix(in srgb, #16a34a 12%, var(--surface));
+  border-color: color-mix(in srgb, #16a34a 35%, var(--border));
+}
+.healthOk .healthDot {
+  background: #16a34a;
+}
+
+.healthDown {
+  background: color-mix(in srgb, #dc2626 12%, var(--surface));
+  border-color: color-mix(in srgb, #dc2626 35%, var(--border));
+}
+.healthDown .healthDot {
+  background: #dc2626;
+}
+
+.tileGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+  gap: 0.9rem;
+  margin: 0 0 2rem;
+  padding: 0;
+  list-style: none;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 1rem 1.1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.tileValue {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.tileLabel {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.sectionHeading {
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+}
+
+.barList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0;
+  list-style: none;
+}
+
+.barRow {
+  display: grid;
+  grid-template-columns: 8rem 1fr 2.5rem;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+}
+
+.barLabel {
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.barTrack {
+  height: 0.55rem;
+  background: var(--surface-2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.barFill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+}
+
+.barValue {
+  text-align: right;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.feedGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.9rem;
+  padding: 0;
+  list-style: none;
+}
+
+.feedCard {
+  padding: 1rem 1.1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.feedCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.feedName {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.feedMeta {
+  margin-top: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.badgeOk {
+  background: color-mix(in srgb, #16a34a 15%, var(--surface));
+  color: #16a34a;
+}
+
+.badgeWarning {
+  background: color-mix(in srgb, #d97706 15%, var(--surface));
+  color: #d97706;
+}
+
+.badgeError {
+  background: color-mix(in srgb, #dc2626 15%, var(--surface));
+  color: #dc2626;
+}
+
+.empty {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
