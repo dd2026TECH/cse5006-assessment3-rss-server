@@ -59,6 +59,39 @@ exactly the kind of question Assessment 3's reporting will ask.
   and what an alert rule fires on. `durationMs` is nullable so latency reporting has somewhere to go
   in A3 without a migration.
 
+## Assessment 3 additions
+
+`RequestLog` gained three columns rather than a new table, because every one of them is a property
+of a request that was already being logged — adding a table would have meant joining back to
+`RequestLog` on every dashboard query for no benefit.
+
+- **`clientId`** — the brief asks for "unique client counts" and "requests per client", but this API
+  has no authentication layer (out of scope for the brief), so there is no user id to key on. The
+  caller's IP address (`x-forwarded-for`, falling back to the direct socket address) is the closest
+  stable identity available. It is intentionally coarse: two people behind the same NAT would count
+  as one client. Good enough for an operational dashboard; not a claim of precise user tracking.
+- **`feedId`** — nullable, because not every request is about a specific feed (`/api/health`,
+  `/api/authors`). Read from whichever query parameter the route already uses (`?feedId=` on
+  `/api/posts`, `?id=` on `/api/feeds`) rather than resolved from `?slug=`, which would cost a DB
+  lookup on every single request just to populate a metrics column.
+- **`outcome`** — derived once from `status` at write time (`< 400` → `"ok"`) instead of re-deriving
+  it from a status range on every dashboard read. A denormalisation, but a cheap and obviously
+  correct one: it can never disagree with `status` because it is computed from it at the same instant.
+
+All three are populated inside the existing shared `record()` helper in `lib/api.ts`, not in
+individual route handlers — the same "instrument once, at the boundary" reasoning `RequestLog`
+itself was built on for A2. No route file changed to pick up the new columns.
+
+**`Feed.community-digest`** — a seeded feed with zero posts. Not a schema change, a seed-data
+decision: the brief's A-band descriptor for observability wants an empty-feed warning demonstrable
+on camera, and a feed that has structurally never had any posts is a more honest way to produce that
+state than deleting posts from a real feed at record time.
+
+Existing rows from Assessment 2 needed a backfill migration for the new `outcome` column (`NOT NULL`
+with no default, added after existing data existed) — see
+`prisma/migrations/20260815010738_request_log_metrics_fields/`, which adds the columns nullable,
+backfills `outcome` from `status`, then applies the `NOT NULL` constraint in that order.
+
 ## Deviations from the lab, and why
 
 - **Prisma 7 requires a driver adapter.** The lab's `new PrismaClient()` no longer compiles; the
