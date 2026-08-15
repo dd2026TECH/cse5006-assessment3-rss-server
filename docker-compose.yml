@@ -1,13 +1,18 @@
-# Three services, following the Module 7 lab (Lab 7b): the UI, the API, and a
-# real Postgres instance with a named volume so data survives a restart.
+# Following the Module 7 lab (Lab 7b) for frontend/api/postgres, and Workshop 9
+# for the OpenTelemetry stack (jaegertracing, zipkin-all-in-one, otel-collector,
+# prometheus) — see api/instrumentation.ts for what gets traced and why.
 #
-# Ports match the lab exactly — the frontend is published on 80 and the API on
+# Ports match the labs exactly — the frontend is published on 80 and the API on
 # 4080, both mapping to Next.js's 3000 inside the container. The security group
-# on the EC2 instance must allow inbound 80 and 4080.
+# on the EC2 instance must allow inbound 80, 4080, and (for Workshop 9) 16686
+# (Jaeger UI), 9411 (Zipkin), 9090 (Prometheus), 8888/8889 (collector metrics).
 #
 #   docker-compose up --build
 #   http://<ec2-public-dns>/          the site
 #   http://<ec2-public-dns>:4080/     the API and its documentation page
+#   http://<ec2-public-dns>:16686/    Jaeger UI (traces)
+#   http://<ec2-public-dns>:9411/     Zipkin UI (traces)
+#   http://<ec2-public-dns>:9090/     Prometheus UI (metrics)
 
 services:
   frontend:
@@ -33,9 +38,12 @@ services:
       - "4080:3000"
     depends_on:
       - postgres
+      - otel-collector
     environment:
       - NODE_ENV=development
       - DATABASE_URL=postgresql://user:password@postgres:5432/mydb
+      # Read by @vercel/otel (api/instrumentation.ts) to export traces.
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
     volumes:
       - ./api:/app
       - /app/node_modules
@@ -52,6 +60,49 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+
+  # --- Workshop 9: OpenTelemetry (traces + metrics) ---
+
+  jaegertracing:
+    image: jaegertracing/jaeger:latest
+    restart: always
+    ports:
+      - "16686:16686"
+      - "14268"
+      - "14250"
+
+  zipkin-all-in-one:
+    image: openzipkin/zipkin:latest
+    restart: always
+    ports:
+      - "9411:9411"
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.67.0
+    restart: always
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "1888:1888"   # pprof extension
+      - "8888:8888"   # Prometheus metrics exposed by the collector
+      - "8889:8889"   # Prometheus exporter metrics
+      - "13133:13133" # health_check extension
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+      - "55679:55679" # zpages extension
+    depends_on:
+      - jaegertracing
+      - zipkin-all-in-one
+
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus:latest
+    restart: always
+    volumes:
+      - ./prometheus.yaml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
 
 volumes:
   postgres_data:
