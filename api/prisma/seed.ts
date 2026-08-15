@@ -124,16 +124,123 @@ async function main() {
     }
   }
 
-  const [feeds, authors, postCount, citations] = await Promise.all([
+  // --- Assessment 3: an empty feed, and simulated request history ---
+  //
+  // The brief asks for edge cases in the seed (an empty feed, a failed-fetch
+  // record, an invalid item) so the dashboard's alert states are demonstrable
+  // on camera, and for metrics spread across a realistic time range rather
+  // than all "now". See DEVELOPER_PRACTICES.md §5.
+  const emptyFeed = await prisma.feed.upsert({
+    where: { slug: "community-digest" },
+    update: { name: "Community Digest" },
+    create: {
+      slug: "community-digest",
+      name: "Community Digest",
+      description:
+        "Reserved for community-submitted posts — none yet, so the dashboard's empty-feed alert has something real to show.",
+      url: null,
+    },
+  });
+
+  // Simulated rows are idempotent by convention: every one carries a
+  // "seed-sim-" clientId, so re-running the seed replaces them wholesale
+  // without touching RequestLog rows created by real requests.
+  await prisma.requestLog.deleteMany({ where: { clientId: { startsWith: "seed-sim-" } } });
+
+  const allFeeds = await prisma.feed.findMany();
+  const buildJournal = allFeeds.find((f) => f.slug === "build-journal");
+  const researchNotes = allFeeds.find((f) => f.slug === "research-notes");
+  const SIM_CLIENTS = [
+    "seed-sim-client-1",
+    "seed-sim-client-2",
+    "seed-sim-client-3",
+    "seed-sim-client-4",
+    "seed-sim-client-5",
+  ];
+  const SIM_ROUTES: { path: string; method: string; feedId: number | null }[] = [
+    { path: "/api/posts", method: "GET", feedId: null },
+    { path: "/api/posts", method: "GET", feedId: buildJournal?.id ?? null },
+    { path: "/api/posts", method: "GET", feedId: researchNotes?.id ?? null },
+    { path: "/api/feeds", method: "GET", feedId: null },
+    { path: "/api/feeds/rss.xml", method: "GET", feedId: buildJournal?.id ?? null },
+    { path: "/api/feeds/rss.xml", method: "GET", feedId: researchNotes?.id ?? null },
+  ];
+
+  type SimRow = {
+    method: string;
+    path: string;
+    status: number;
+    durationMs: number;
+    clientId: string;
+    feedId: number | null;
+    outcome: string;
+    createdAt: Date;
+  };
+
+  const now = Date.now();
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const simRows: SimRow[] = [];
+
+  // 14 days of history with a gently rising trend, so day-over-day charts
+  // have real shape instead of a flat line.
+  for (let daysAgo = 13; daysAgo >= 0; daysAgo--) {
+    const requestsToday = 15 + Math.round(Math.random() * 25) + (13 - daysAgo);
+    for (let i = 0; i < requestsToday; i++) {
+      const route = SIM_ROUTES[Math.floor(Math.random() * SIM_ROUTES.length)];
+      const client = SIM_CLIENTS[Math.floor(Math.random() * SIM_CLIENTS.length)];
+      const isError = Math.random() < 0.04; // background noise, distinct from the edge cases below
+      simRows.push({
+        method: route.method,
+        path: route.path,
+        status: isError ? 500 : 200,
+        durationMs: 20 + Math.round(Math.random() * 180),
+        clientId: client,
+        feedId: route.feedId,
+        outcome: isError ? "error" : "ok",
+        createdAt: new Date(now - daysAgo * DAY_MS - Math.random() * DAY_MS),
+      });
+    }
+  }
+
+  // Edge case: a recent failed fetch against the empty feed's RSS output —
+  // what the "fetch failure in the last N minutes" alert rule reads.
+  simRows.push({
+    method: "GET",
+    path: "/api/feeds/rss.xml",
+    status: 500,
+    durationMs: 340,
+    clientId: "seed-sim-client-1",
+    feedId: emptyFeed.id,
+    outcome: "error",
+    createdAt: new Date(now - 4 * 60 * 1000),
+  });
+
+  // Edge case: a recent invalid submission — the "invalid data" indicator.
+  simRows.push({
+    method: "POST",
+    path: "/api/posts",
+    status: 400,
+    durationMs: 12,
+    clientId: "seed-sim-client-2",
+    feedId: buildJournal?.id ?? null,
+    outcome: "error",
+    createdAt: new Date(now - 7 * 60 * 1000),
+  });
+
+  await prisma.requestLog.createMany({ data: simRows });
+
+  const [feeds, authors, postCount, citations, requestLogCount] = await Promise.all([
     prisma.feed.count(),
     prisma.author.count(),
     prisma.post.count(),
     prisma.citation.count(),
+    prisma.requestLog.count(),
   ]);
   // Written to the stream directly rather than via console: this is a CLI
   // script whose output is the point, not leftover debug logging.
   process.stdout.write(
-    `seeded: ${feeds} feeds, ${authors} authors, ${postCount} posts, ${citations} citations\n`,
+    `seeded: ${feeds} feeds, ${authors} authors, ${postCount} posts, ${citations} citations, ` +
+      `${requestLogCount} request log rows (${simRows.length} simulated)\n`,
   );
 }
 
