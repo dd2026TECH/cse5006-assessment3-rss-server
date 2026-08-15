@@ -17,9 +17,35 @@ export function preflight() {
 }
 
 /**
- * Writes a RequestLog row for every API call. This is what /api/count and
- * /api/stats read, and the table Assessment 3's dashboards will build on.
- * Logging must never break the response, so failures here are swallowed.
+ * The caller's IP, used as a stable-enough client identity since this API has
+ * no auth. `x-forwarded-for` first (set by a reverse proxy / Docker's host
+ * mapping), falling back to the direct socket address.
+ */
+function clientIdOf(request: NextRequest): string | null {
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) return forwarded.split(",")[0].trim();
+  return request.headers.get("x-real-ip");
+}
+
+/**
+ * Best-effort feedId for the request, read from whichever query param the
+ * route uses (`feedId` on /api/posts, `id` on /api/feeds itself). Not
+ * resolved from `?slug=` — that would mean a DB lookup on every single
+ * request just for a metrics dimension, which isn't worth the cost.
+ */
+function feedIdOf(request: NextRequest): number | null {
+  const path = request.nextUrl.pathname;
+  const raw =
+    request.nextUrl.searchParams.get("feedId") ??
+    (path.startsWith("/api/feeds") ? request.nextUrl.searchParams.get("id") : null);
+  const parsed = raw === null ? NaN : Number(raw);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+/**
+ * Writes a RequestLog row for every API call. This is what /api/count,
+ * /api/stats and Assessment 3's dashboard/alerts all read. Logging must never
+ * break the response, so failures here are swallowed.
  */
 async function record(
   request: NextRequest,
@@ -33,6 +59,9 @@ async function record(
         path: request.nextUrl.pathname,
         status,
         durationMs: Date.now() - startedAt,
+        clientId: clientIdOf(request),
+        feedId: feedIdOf(request),
+        outcome: status < 400 ? "ok" : "error",
       },
     });
   } catch {
