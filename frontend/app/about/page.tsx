@@ -30,9 +30,12 @@ export default function AboutPage() {
           The content the LMS delivers comes from an <strong>RSS Server</strong>:
           a Postgres database behind Prisma, CRUD and operational APIs, and a
           real RSS 2.0 feed. Assessment 1 built the interface — focused on
-          making content easy to navigate, scan, and read on any device;
+          making content easy to navigate, scan, and read on any device.
           Assessment 2 built the server behind it, so what you see now is
-          real, database-driven content rather than a stand-in.
+          real, database-driven content rather than a stand-in. Assessment 3
+          turned that server into a system that reports on itself — a
+          dashboard, rule-based alerts, and testing evidence proving it
+          actually works, rather than asking anyone to take that on faith.
         </p>
       </section>
 
@@ -57,19 +60,32 @@ export default function AboutPage() {
       <section aria-labelledby="scope-heading" className={styles.section}>
         <h2 id="scope-heading">Current scope</h2>
         <p className={styles.callout}>
-          <strong>Assessment 2 is live.</strong> The RSS Server — Postgres
-          behind Prisma, CRUD and operational APIs, and a real RSS 2.0 feed —
-          is running behind this interface. The Feeds page reads real posts
-          from the database through the API; the RSS Client page fetches a
-          live feed over HTTP and parses the actual XML, the same way any
-          real feed reader would.
+          <strong>Assessment 3 is live.</strong> The RSS Server now proves it
+          is working, not just that it runs: a{" "}
+          <Link href="/dashboard">dashboard</Link> reports real usage instead
+          of running silently, rule-based alerts catch problems — failed
+          fetches, invalid data, empty feeds — without a human watching for
+          them, and hard evidence backs every one of those claims instead of
+          just asserting them.
         </p>
         <p>
-          The Feeds page always read its data through a single access
-          function, so swapping in the real backend for Assessment 2 required
-          no interface changes — the point of building it that way from the
-          start. Later assessments add dashboards, alerts, reporting, and a
-          cloud deployment on top of this same system.
+          That evidence comes from four tools, each deliberately covering a
+          different failure mode: <strong>Playwright</strong> (does the
+          software do what it&apos;s supposed to?), <strong>JMeter</strong>{" "}
+          (does it keep doing that under load?), <strong>Lighthouse</strong>{" "}
+          (can everyone actually use it?), and{" "}
+          <strong>OpenTelemetry</strong> (when something goes wrong, can you
+          see where?). See{" "}
+          <Link href="/assessment-3">the Assessment 3 page</Link> for how
+          each one maps back to the course labs and what specifically each
+          one caught.
+        </p>
+        <p>
+          Underneath all of that, the Feeds page still reads its data through
+          a single access function, so swapping in the real backend for
+          Assessment 2 required no interface changes — the point of building
+          it that way from the start. Assessment 4 brings everything
+          together as a live cloud deployment.
         </p>
       </section>
 
@@ -86,7 +102,7 @@ export default function AboutPage() {
         </p>
         <p>
           <a
-            href="https://github.com/dd2026TECH/cse5006-assessment2-rss-server"
+            href="https://github.com/dd2026TECH/cse5006-assessment3-rss-server"
             target="_blank"
             rel="noopener noreferrer"
           >
