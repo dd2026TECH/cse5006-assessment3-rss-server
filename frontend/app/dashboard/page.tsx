@@ -46,6 +46,32 @@ export default async function DashboardPage() {
         <p className={styles.empty}>Could not load statistics from the RSS Server.</p>
       ) : (
         <>
+          <section aria-labelledby="alerts-heading" className={styles.alertsSection}>
+            <h2 id="alerts-heading" className={styles.sectionHeading}>
+              Alerts
+            </h2>
+            {stats.alerts.length === 0 ? (
+              <p className={styles.noAlerts}>No active alerts — every rule is passing.</p>
+            ) : (
+              <ul className={styles.alertList}>
+                {stats.alerts.map((alert, index) => (
+                  <li
+                    key={`${alert.severity}-${index}`}
+                    className={`${styles.alertItem} ${
+                      alert.severity === "error"
+                        ? styles.alertError
+                        : alert.severity === "warning"
+                          ? styles.alertWarning
+                          : styles.alertInfo
+                    }`}
+                  >
+                    {alert.message}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
           <ul className={styles.tileGrid}>
             <li className={styles.tile}>
               <span className={styles.tileValue}>{stats.usage.totalRequests}</span>
@@ -133,14 +159,20 @@ export default async function DashboardPage() {
                     <span className={styles.feedName}>{feed.name}</span>
                     <span
                       className={`${styles.badge} ${
-                        feed.hasRecentError
+                        feed.hasRecentFetchFailure
                           ? styles.badgeError
-                          : feed.isEmpty
+                          : feed.hasRecentInvalidData || feed.isEmpty
                             ? styles.badgeWarning
                             : styles.badgeOk
                       }`}
                     >
-                      {feed.hasRecentError ? "Error" : feed.isEmpty ? "Empty" : "Healthy"}
+                      {feed.hasRecentFetchFailure
+                        ? "Fetch failure"
+                        : feed.hasRecentInvalidData
+                          ? "Invalid data"
+                          : feed.isEmpty
+                            ? "Empty"
+                            : "Healthy"}
                     </span>
                   </div>
                   <p className={styles.feedMeta}>
