@@ -89,17 +89,32 @@ model Citation {
   @@index([postId])
 }
 
-/// Persisted request history. Backs /api/count and /api/stats so the counter
-/// survives a restart instead of living in memory — and it is the metrics
-/// foundation Assessment 3's dashboards and alerts will read.
+/// Persisted request history. Backs /api/count and /api/stats, and is the
+/// metrics foundation Assessment 3's dashboard, alerts and JMeter analysis
+/// read.
+///
+/// clientId: no auth exists on this API, so the caller's IP address is the
+/// closest thing to a stable client identity — good enough for "unique
+/// clients" and per-client breakdowns without adding a login system out of
+/// scope for the brief.
+/// feedId: read from `?feedId=`/`?id=` on feed-scoped routes when present;
+/// null for routes that are not about a specific feed (e.g. /api/health).
+/// outcome: derived once at write time from `status` (< 400 = ok) so the
+/// dashboard can `groupBy(['outcome'])` directly instead of re-deriving it
+/// from status ranges on every read.
 model RequestLog {
   id         Int      @id @default(autoincrement())
   method     String
   path       String
   status     Int
   durationMs Int?
+  clientId   String?
+  feedId     Int?
+  outcome    String
   createdAt  DateTime @default(now())
 
   @@index([createdAt])
   @@index([path])
+  @@index([feedId])
+  @@index([clientId])
 }

@@ -1,0 +1,4 @@
+-- No-op: superseded by 20260815010738_request_log_metrics_fields, which
+-- carries the real (backfilled) version of this change. Left as an empty
+-- migration rather than deleted because this session's tooling could not
+-- remove the folder outright.
