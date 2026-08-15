@@ -57,7 +57,15 @@ test("switching feeds fetches a different channel", async ({ page }) => {
   const options = await select.locator("option").allTextContents();
   test.skip(options.length < 2, "needs at least two seeded feeds");
 
-  await select.selectOption({ index: 1 });
+  // Switch to a feed other than the one already shown. "Community Digest" is
+  // Assessment 3's deliberately empty feed (seeded for the dashboard's
+  // empty-feed alert case) — skip past it here rather than asserting on it,
+  // since this test is specifically about switching between feeds with items.
+  const target = options.find(
+    (label) => label !== options[0] && label !== "Community Digest",
+  );
+  test.skip(!target, "no second non-empty feed available to switch to");
+  await select.selectOption({ label: target! });
   await expect(page.locator("code")).toContainText("slug=");
   await page.getByRole("button", { name: "Fetch feed" }).click();
 
