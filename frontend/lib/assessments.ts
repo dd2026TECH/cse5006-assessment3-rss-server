@@ -50,7 +50,7 @@ export const assessments: Assessment[] = [
     slug: "assessment-3",
     title: "Data-driven app & reporting",
     weight: "25%",
-    status: "upcoming",
+    status: "in progress",
     summary:
       "Turns the running RSS Server into a data-driven app: dashboards summarising real usage, simulated records across a time range, and evidence from automated and load testing.",
     adds: [
