@@ -54,10 +54,12 @@ export const assessments: Assessment[] = [
     summary:
       "Turns the running RSS Server into a data-driven app: dashboards summarising real usage, simulated records across a time range, and evidence from automated and load testing.",
     adds: [
-      "Reporting dashboards for health, feed counts and request volume",
-      "Status and alert indicators for failed fetches or empty feeds",
-      "Playwright coverage of the server and client use cases",
-      "JMeter staged load tests and a Lighthouse accessibility pass",
+      "A /dashboard reporting real usage: health status, request totals, requests per feed and per client, and feed status summaries, backed by the database rather than kept in memory",
+      "Rule-based alerts (empty feed, failed fetch, invalid data, idle) that surface problems on the dashboard itself, without anyone needing to check logs",
+      "Playwright coverage of the server use case (feed CRUD) and the client use case (RSS retrieval)",
+      "JMeter staged load testing (x1 through x10000) against the Dockerised app, with the results interpreted, not just reported",
+      "A Lighthouse accessibility pass that found and fixed a real WCAG contrast bug (96 -> 100), with before/after evidence kept",
+      "OpenTelemetry distributed tracing (Jaeger, Zipkin, Prometheus) that let the load-testing bottleneck be confirmed from real request traces instead of just guessed at",
     ],
   },
   {

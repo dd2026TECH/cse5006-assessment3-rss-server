@@ -31,14 +31,6 @@
   color: var(--accent);
 }
 
-.summary {
-  padding: 1.1rem 1.25rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  font-size: 1.02rem;
-}
-
 .section h2 {
   margin-bottom: 0.5rem;
 }

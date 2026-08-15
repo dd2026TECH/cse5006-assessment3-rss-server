@@ -23,18 +23,6 @@ export default function Assessment3Page() {
         <span className={styles.status}>{assessment.status}</span>
       </p>
 
-      <p className={styles.summary}>
-        <strong>What this assessment is about, in one paragraph:</strong> Assessment 3 is the
-        point where the RSS Server stops being code that only works when someone happens to be
-        looking at it, and becomes a system that can show its own working — a dashboard reporting
-        real usage instead of running silently, alert rules that catch problems without a human
-        watching for them, and hard evidence, not just assertions, that each of those claims is
-        actually true. The evidence comes from four different tools deliberately covering
-        different failure modes: Playwright (does the software do what it's supposed to?),
-        JMeter (does it keep doing that under load?), Lighthouse (can everyone actually use it?),
-        and OpenTelemetry (when something goes wrong, can you see where?).
-      </p>
-
       <section aria-labelledby="what-heading" className={styles.section}>
         <h2 id="what-heading">What this part adds</h2>
         <ul className={styles.builtList}>
