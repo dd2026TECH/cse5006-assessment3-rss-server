@@ -55,7 +55,7 @@ test.describe("assessment pages", () => {
     ).toBeVisible();
   });
 
-  test("Assessment 3 page renders as an upcoming placeholder", async ({
+  test("Assessment 3 page reflects work in progress, not a placeholder", async ({
     page,
   }) => {
     await page.goto("/assessment-3");
@@ -65,10 +65,10 @@ test.describe("assessment pages", () => {
         name: /Assessment 3 — Data-driven app & reporting/,
       }),
     ).toBeVisible();
-    await expect(page.getByText("upcoming")).toBeVisible();
+    await expect(page.getByText("in progress")).toBeVisible();
     await expect(
       page.getByText("This part hasn't been built yet"),
-    ).toBeVisible();
+    ).not.toBeVisible();
   });
 });
 
