@@ -38,21 +38,34 @@ logs app-api-1` shows **zero** 5xx responses logged across the entire test run, 
 x10000 stage. The server never crashed and never rejected a request outright — it just couldn't
 get through its queue fast enough, so requests piled up until the client gave up waiting.
 
-**Likely cause: single-process, single-container serialisation, not the database.** The `api`
-container runs one Next.js process; every request — even ones with no DB work like `/api/health` —
-funnels through the same Node event loop and the same Prisma connection pool (Prisma's default pool
-is small, sized off CPU count). At low concurrency that's invisible. Past roughly 100 concurrent
-requests, they start queuing behind each other rather than executing in parallel, and the queue only
-grows from there — consistent with `/api/health` (a single trivial query) being just as likely to
-time out as the heavier routes once the queue is backed up, since queueing time dominates over
-actual work time.
+**Confirmed with OpenTelemetry tracing, not just inferred from aggregate numbers.** Workshop 9's
+observability stack (Jaeger, Zipkin, Prometheus, via `api/instrumentation.ts` and `@vercel/otel`) is
+wired into the same `api` container, so every request during a load test gets a real trace. Re-ran
+the x100 stage with tracing live and inspected the slowest `/api/health` traces in Jaeger
+(`http://localhost:16686`): even the slowest one measured **~1.5 seconds of actual traced work**
+(`resolve page components` + `executing api route` + `start response`) — while JMeter measured
+requests in the *same run* taking up to 15 seconds end to end, with an average around 3.9 seconds.
 
-**What this motivates for Assessment 4's performance-improvements criterion:** this points at
-concurrency handling rather than query optimisation — e.g. a larger/explicit Prisma connection pool
-size, horizontal scaling (more `api` container replicas behind a load balancer), or a rate limit
-that fails fast with a real 429 instead of letting requests queue silently until the client times
-out. Re-running this same `.jmx` plan after such a change, at the x100/x1000 stages specifically
-(where the ceiling first appears), is the natural before/after comparison.
+That gap — traced application code finishing in ~1.5s while the client-observed response time was
+2–10× longer — rules out slow queries or slow route-handler logic as the cause (a slow query would
+show up *inside* the trace). **The delay is happening before the request reaches the traced code
+path at all.** The most likely explanation: this `docker-compose` setup runs the `api` container
+with `npm run dev` (development mode), not a production build — Next.js dev mode does on-demand
+compilation and single-process request handling that a production `next build && next start` does
+not, and that queuing would sit entirely outside what request-level tracing captures.
+
+**Original hypothesis (Prisma connection pool exhaustion) was reasonable from the aggregate numbers
+alone, but the trace evidence points somewhere else — a case for tracing over guessing.** `/api/health`
+runs a single trivial query and still degraded identically to the DB-heavier routes, which is more
+consistent with "every request queues behind the same bottleneck regardless of what it does" than
+with a connection-pool-specific limit.
+
+**What this motivates for Assessment 4's performance-improvements criterion:** re-run this same load
+test against a **production build** (`next build && next start`) instead of dev mode first — if the
+ceiling moves substantially, dev-mode overhead was the dominant factor, not application code. If it
+doesn't move much, that's evidence for the concurrency-handling theory instead (Prisma pool size,
+horizontal replicas, a fast-failing rate limit). Either way, the before/after JMeter comparison
+should be paired with the same Jaeger trace inspection done here, not just the aggregate table.
 
 ## Reproducing
 

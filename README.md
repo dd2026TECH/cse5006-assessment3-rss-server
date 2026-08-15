@@ -33,6 +33,10 @@ Unchanged from Assessment 2's split — two Next.js packages plus a database ser
 | `frontend` | UI only | Next.js | `80:3000` |
 | `api` | REST API only | Next.js + Prisma 7 | `4080:3000` |
 | `postgres` | Database | `postgres:15`, named volume | `5432:5432` |
+| `jaegertracing` | Trace viewer | Jaeger | `16686:16686` |
+| `zipkin-all-in-one` | Trace viewer (alt) | Zipkin | `9411:9411` |
+| `otel-collector` | Trace/metric fan-out | OTel Collector Contrib | `4317`/`4318` (OTLP), `8888`/`8889` (metrics) |
+| `prometheus` | Metrics UI | Prometheus | `9090:9090` |
 
 ## What Assessment 3 adds
 
@@ -55,6 +59,20 @@ Unchanged from Assessment 2's split — two Next.js packages plus a database ser
   rows (tagged `clientId` starting `seed-sim-`), never real traffic.
 - **Testing evidence** — see `docs/load-testing/` and `docs/lighthouse/`, both with their own
   `SUMMARY.md` explaining what was found and, for Lighthouse, what changed because of it.
+- **OpenTelemetry instrumentation** (`api/instrumentation.ts`, following Workshop 9) — every request
+  to the `api` container is traced and exported to Jaeger and Zipkin, with metrics exported to
+  Prometheus via the OTel Collector. This is deliberately separate from the `RequestLog`/dashboard
+  metrics above: `RequestLog` answers "how many requests, per feed, per client" (aggregate counts
+  for the operational dashboard); tracing answers "where did the time go *inside* one request"
+  (per-request timelines). The load-testing writeup in `docs/load-testing/SUMMARY.md` uses real
+  trace data from Jaeger to confirm — not just infer — where the JMeter-observed latency actually
+  comes from.
+
+  ```
+  http://localhost:16686/   Jaeger UI — browse traces for the "rss-server-api" service
+  http://localhost:9411/    Zipkin UI — same traces, alternate viewer
+  http://localhost:9090/    Prometheus UI — query e.g. otelcol_exporter_sent_spans
+  ```
 
 ## Running it
 
@@ -155,5 +173,7 @@ specific contrast fix explained in `docs/lighthouse/SUMMARY.md` — 96/100 → 1
 - [x] Simulated data: empty feed + ~14 days of history + explicit edge cases
 - [x] Playwright: server (feed CRUD) and client (RSS retrieval) use cases, 18/18 passing
 - [x] JMeter staged load testing x1–x10000 against the Dockerised app, with interpretation
+      confirmed by real Jaeger trace data, not just aggregate numbers
 - [x] Lighthouse accessibility pass, fix applied and re-verified (96 → 100)
+- [x] OpenTelemetry instrumentation (Workshop 9): traces in Jaeger/Zipkin, metrics in Prometheus
 - [x] Feature branches, clean `main`, no `node_modules` committed
