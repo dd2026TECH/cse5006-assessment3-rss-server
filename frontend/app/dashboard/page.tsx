@@ -50,6 +50,10 @@ export default async function DashboardPage() {
             <h2 id="alerts-heading" className={styles.sectionHeading}>
               Alerts
             </h2>
+            <p className={styles.caption}>
+              Rule-based warnings, recomputed on every page load — not a log of everything that
+              has ever gone wrong, only what&apos;s true right now.
+            </p>
             {stats.alerts.length === 0 ? (
               <p className={styles.noAlerts}>No active alerts — every rule is passing.</p>
             ) : (
