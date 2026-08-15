@@ -42,6 +42,12 @@
   margin-bottom: 2rem;
 }
 
+.caption {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin: -0.25rem 0 0.75rem;
+}
+
 .noAlerts {
   color: var(--text-muted);
   font-size: 0.9rem;
