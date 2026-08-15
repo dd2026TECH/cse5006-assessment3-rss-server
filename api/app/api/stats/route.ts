@@ -18,7 +18,12 @@ export async function OPTIONS() {
 // client, unique client counts, and a per-feed status summary combining post
 // count with recent request outcomes. See DEVELOPER_PRACTICES.md §2 — "every
 // tile answers a question a maintainer would actually ask".
-const RECENT_WINDOW_MS = 15 * 60 * 1000; // "recently" for alert purposes
+// "Recently" for alert purposes. Wide enough that the seeded failed-fetch and
+// invalid-item edge cases stay visible for a normal demo/recording session
+// without needing to be re-seeded to the minute — see prisma/seed.ts and the
+// README's "before recording" note. A live production system would want this
+// much shorter; this value is a deliberate assessment-demo trade-off.
+const RECENT_WINDOW_MS = 6 * 60 * 60 * 1000;
 
 export async function GET(request: NextRequest) {
   const startedAt = Date.now();
