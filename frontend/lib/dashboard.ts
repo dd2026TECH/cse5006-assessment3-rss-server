@@ -18,7 +18,13 @@ export type FeedStatus = {
   posts: number;
   isEmpty: boolean;
   lastRequestAt: string | null;
-  hasRecentError: boolean;
+  hasRecentFetchFailure: boolean;
+  hasRecentInvalidData: boolean;
+};
+
+export type Alert = {
+  severity: "error" | "warning" | "info";
+  message: string;
 };
 
 export type Stats = {
@@ -41,6 +47,7 @@ export type Stats = {
     slowestDurationMs: number | null;
   };
   feedStatus: FeedStatus[];
+  alerts: Alert[];
 };
 
 /**

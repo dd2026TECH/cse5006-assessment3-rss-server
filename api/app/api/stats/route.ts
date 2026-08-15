@@ -24,6 +24,18 @@ export async function OPTIONS() {
 // README's "before recording" note. A live production system would want this
 // much shorter; this value is a deliberate assessment-demo trade-off.
 const RECENT_WINDOW_MS = 6 * 60 * 60 * 1000;
+const RECENT_WINDOW_LABEL = "6 hours";
+
+// Separate from RECENT_WINDOW_MS: this one means "the server has gone quiet",
+// which is a different question from "did a request fail recently" and
+// deliberately stays short — a real idle system, not a demo-friendly window.
+const IDLE_WINDOW_MS = 30 * 60 * 1000;
+const IDLE_WINDOW_LABEL = "30 minutes";
+
+export type Alert = {
+  severity: "error" | "warning" | "info";
+  message: string;
+};
 
 export async function GET(request: NextRequest) {
   const startedAt = Date.now();
@@ -41,6 +53,7 @@ export async function GET(request: NextRequest) {
       byFeed,
       byClient,
       uniqueClients,
+      mostRecentRequest,
     ] = await Promise.all([
       prisma.feed.count(),
       prisma.author.count(),
@@ -80,6 +93,10 @@ export async function GET(request: NextRequest) {
         select: { clientId: true },
         distinct: ["clientId"],
       }),
+      prisma.requestLog.findFirst({
+        orderBy: { createdAt: "desc" },
+        select: { createdAt: true },
+      }),
     ]);
 
     const perFeed = await prisma.feed.findMany({
@@ -87,32 +104,74 @@ export async function GET(request: NextRequest) {
       orderBy: { name: "asc" },
     });
 
-    // Most recent request per feed, and whether any of the last few minutes'
-    // requests for that feed came back as an error — read once and matched
-    // up in memory rather than N queries (one per feed).
+    // Most recent request per feed, and — within the recent window — whether
+    // any came back as a fetch failure (5xx) or invalid data (400). Read once
+    // and matched up in memory rather than N queries (one per feed). Fetch
+    // failure and invalid data are tracked separately because they are
+    // different problems with different fixes, and the brief asks for both
+    // as distinct indicators, not one merged "error" state.
     const recentByFeed = await prisma.requestLog.findMany({
       where: { feedId: { not: null } },
       orderBy: { createdAt: "desc" },
       take: 200,
-      select: { feedId: true, outcome: true, createdAt: true },
+      select: { feedId: true, status: true, createdAt: true },
     });
     const now = Date.now();
-    const feedActivity = new Map<number, { lastRequestAt: Date; hasRecentError: boolean }>();
+    type FeedActivity = {
+      lastRequestAt: Date;
+      hasRecentFetchFailure: boolean;
+      hasRecentInvalidData: boolean;
+    };
+    const feedActivity = new Map<number, FeedActivity>();
     for (const row of recentByFeed) {
       if (row.feedId === null) continue;
-      const existing = feedActivity.get(row.feedId);
       const isRecent = now - row.createdAt.getTime() < RECENT_WINDOW_MS;
+      const existing = feedActivity.get(row.feedId);
       if (!existing) {
         feedActivity.set(row.feedId, {
           lastRequestAt: row.createdAt,
-          hasRecentError: isRecent && row.outcome === "error",
+          hasRecentFetchFailure: isRecent && row.status >= 500,
+          hasRecentInvalidData: isRecent && row.status === 400,
         });
-      } else if (isRecent && row.outcome === "error") {
-        existing.hasRecentError = true;
+      } else {
+        if (isRecent && row.status >= 500) existing.hasRecentFetchFailure = true;
+        if (isRecent && row.status === 400) existing.hasRecentInvalidData = true;
       }
     }
 
     const feedRequestCounts = new Map(byFeed.map((r) => [r.feedId, r._count.feedId]));
+
+    // Rule-based alerts — each one a single explainable sentence, per
+    // DEVELOPER_PRACTICES.md §3. Feed-level rules first (most specific),
+    // then the system-wide idle check.
+    const alerts: Alert[] = [];
+    for (const f of perFeed) {
+      const activity = feedActivity.get(f.id);
+      if (f._count.posts === 0) {
+        alerts.push({ severity: "warning", message: `${f.name} has no posts.` });
+      }
+      if (activity?.hasRecentFetchFailure) {
+        alerts.push({
+          severity: "error",
+          message: `${f.name} had a failed fetch in the last ${RECENT_WINDOW_LABEL}.`,
+        });
+      }
+      if (activity?.hasRecentInvalidData) {
+        alerts.push({
+          severity: "warning",
+          message: `${f.name} received invalid data in the last ${RECENT_WINDOW_LABEL}.`,
+        });
+      }
+    }
+    if (
+      !mostRecentRequest ||
+      now - mostRecentRequest.createdAt.getTime() > IDLE_WINDOW_MS
+    ) {
+      alerts.push({
+        severity: "info",
+        message: `No requests received in the last ${IDLE_WINDOW_LABEL}.`,
+      });
+    }
 
     return ok(
       request,
@@ -156,9 +215,11 @@ export async function GET(request: NextRequest) {
             posts: f._count.posts,
             isEmpty: f._count.posts === 0,
             lastRequestAt: activity?.lastRequestAt ?? null,
-            hasRecentError: activity?.hasRecentError ?? false,
+            hasRecentFetchFailure: activity?.hasRecentFetchFailure ?? false,
+            hasRecentInvalidData: activity?.hasRecentInvalidData ?? false,
           };
         }),
+        alerts,
       },
       startedAt,
     );
