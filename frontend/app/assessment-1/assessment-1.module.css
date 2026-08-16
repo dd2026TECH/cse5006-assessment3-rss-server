@@ -27,8 +27,8 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  background: color-mix(in srgb, var(--accent) 18%, transparent);
-  color: var(--accent);
+  background: var(--status-info-bg);
+  color: var(--status-info-text);
 }
 
 .statusComplete {
