@@ -22,15 +22,14 @@ services:
     depends_on:
       - api
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       # Server components talk to the api container directly over the Docker
       # network. The browser cannot resolve this name — client-side code derives
       # its URL from window.location instead (see frontend/lib/apiConfig.ts).
       - API_INTERNAL_URL=http://api:3000
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules # keeps the image's install, not the host's
-    command: npm run dev
+    # No bind mount: the image already contains the production build
+    # (`npm run build` at image-build time). Mounting the host source over
+    # /app here would hide that build and put dev source back in its place.
 
   api:
     build: ./api
@@ -40,15 +39,13 @@ services:
       - postgres
       - otel-collector
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - DATABASE_URL=postgresql://user:password@postgres:5432/mydb
       # Read by @vercel/otel (api/instrumentation.ts) to export traces.
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
-    volumes:
-      - ./api:/app
-      - /app/node_modules
-      - /app/app/generated # generated Prisma client belongs to the image
-    # entrypoint.sh waits for Postgres, applies migrations, seeds, then serves.
+    # No bind mount, same reasoning as frontend — entrypoint.sh waits for
+    # Postgres, applies migrations, seeds, then runs the built app (`npm
+    # run start`), all baked into the image rather than the host source.
 
   postgres:
     image: postgres:15

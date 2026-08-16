@@ -90,6 +90,12 @@ directly, and `http://localhost:4080/` for the API's own documentation page. `en
 for Postgres, applies migrations, then seeds automatically — a fresh volume comes up already
 populated, dashboard and alerts included.
 
+Both containers run a production build (`next build` at image-build time, `next start` at
+container start), not `npm run dev` — see `docs/load-testing/SUMMARY.md` for why this matters and
+the before/after load-testing numbers. There's no bind mount into either container, so a code
+change needs `docker-compose up -d --build` to take effect, not just a save — use
+[Local development](#local-development) below for a live-reloading edit loop instead.
+
 **Before recording the demo video**, re-run the seed so the alert states are freshly within their
 time windows rather than relying on whatever was seeded hours or days earlier:
 

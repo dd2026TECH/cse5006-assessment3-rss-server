@@ -28,6 +28,19 @@ RUN chmod +x /app/entrypoint.sh
 
 RUN npx prisma generate
 
+# Production build, done once at image-build time rather than on every
+# container start — this is what Assessment 2's grading feedback and
+# Assessment 3's own JMeter/tracing investigation both pointed at: `npm run
+# dev` handles requests on-demand with dev-mode overhead, while `next start`
+# serves a pre-built, optimised app.
+#
+# next build's "collecting page data" step imports every route module,
+# including lib/prisma.ts, which throws if DATABASE_URL is unset — it never
+# actually connects at build time, so this just needs to be present, not
+# reachable. Same value docker-compose sets at runtime.
+ENV DATABASE_URL=postgresql://user:password@postgres:5432/mydb
+RUN npm run build
+
 EXPOSE 3000
 
 CMD ["/bin/sh", "/app/entrypoint.sh"]
