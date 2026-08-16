@@ -102,12 +102,20 @@ export default async function DashboardPage() {
               <span className={styles.tileLabel}>Avg response time</span>
             </li>
           </ul>
+          <p className={styles.caption}>
+            All-time counts since the database was last seeded, not a live rate. Unique clients is
+            IP-address-based, since there&apos;s no login system on this API.
+          </p>
 
           <div className={styles.columns}>
             <section aria-labelledby="requests-per-feed-heading">
               <h2 id="requests-per-feed-heading" className={styles.sectionHeading}>
                 Requests per feed
               </h2>
+              <p className={styles.caption}>
+                How much total traffic each feed has generated — not when it happened, just how
+                much.
+              </p>
               <ul className={styles.barList}>
                 {stats.usage.requestsPerFeed.map((row) => (
                   <li key={row.slug} className={styles.barRow}>
@@ -130,6 +138,10 @@ export default async function DashboardPage() {
               <h2 id="requests-per-client-heading" className={styles.sectionHeading}>
                 Requests per client
               </h2>
+              <p className={styles.caption}>
+                Same idea, grouped by requester instead of by feed — which clients are actually
+                using the RSS server.
+              </p>
               <ul className={styles.barList}>
                 {stats.usage.requestsPerClient.map((row) => (
                   <li key={row.clientId} className={styles.barRow}>
@@ -156,6 +168,11 @@ export default async function DashboardPage() {
             <h2 id="feed-status-heading" className={styles.sectionHeading}>
               Feed status
             </h2>
+            <p className={styles.caption}>
+              One card per feed, badge showing its most urgent current problem — fetch failure
+              beats invalid data beats empty, since that&apos;s the order a maintainer would want
+              to fix them in.
+            </p>
             <ul className={styles.feedGrid}>
               {stats.feedStatus.map((feed) => (
                 <li key={feed.slug} className={styles.feedCard}>
