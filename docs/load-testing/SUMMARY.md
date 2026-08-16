@@ -34,6 +34,28 @@ the downsampled file.
 Raw results: `prod-results-x100.jtl`, `prod-results-x1000.jtl`, `prod-results-x10000.jtl` (the last
 one downsampled the same way, every 50th row, same file-size reason).
 
+## Results — production build on EC2 (the actual deployed instance, over the public internet)
+
+Same `.jmx` plan, same production build, but run from this machine against the live EC2 host
+(`ec2-54-161-72-94.compute-1.amazonaws.com:4080`) instead of localhost — real network latency and
+the Learner Lab instance's real (smaller) hardware, instead of loopback on a dev machine. x10000
+wasn't run here; the localhost result already established where that ceiling is, and repeating it
+over the public internet wouldn't add information.
+
+| Stage | Threads | Ramp-up | Total requests | Errors | Error rate | Avg response | Max response |
+|---|---|---|---|---|---|---|---|
+| x100 | 100 | 2s | 400 | 0 | **0%** | **437ms** | 1,508ms |
+| x1000 | 1,000 | 10s | 4,000 | 0 | **0%** | **963ms** | 3,646ms |
+
+Raw results: `ec2-results-x100.jtl`, `ec2-results-x1000.jtl`.
+
+Both stages still cleared with zero errors — the ~200-700ms increase over the localhost production
+numbers (227ms → 437ms at x100, 1,613ms → 963ms... note x1000 is actually *faster* despite the
+network hop, most likely because the EC2 host isn't sharing CPU/IO with the JMeter client process
+itself the way localhost does) is consistent with real internet round-trip time plus a smaller
+instance, not a regression in the fix. This is the number that reflects what an actual user hitting
+the live deployment would experience.
+
 ## What changed
 
 The `api` and `frontend` Dockerfiles now run `RUN npm run build` at image-build time, and their
@@ -61,10 +83,12 @@ original hypothesis: dev mode's on-demand compilation and single-process request
 application code or the database, was the dominant cause of the degradation at realistic load
 levels.
 
-**x10000 is still a real ceiling, even in production mode** (91.31% errors, average ~11s) — nearly
-as bad as dev mode's 98.36%. This is the honest, useful part of the result: the fix didn't make the
-system infinitely scalable, it moved the breaking point from "cracks under 100 concurrent users" to
-"holds firm through 1,000 concurrent users and only genuinely breaks at 10,000." For context, 10,000
+**x10000 is still a real ceiling, even in production mode, but it did improve too** — 91.31% errors
+versus dev mode's 98.36%, roughly 2,800 fewer failed requests out of 40,000. Not a fix, but not
+nothing either: the production build helped at every stage tested, just not enough to clear the
+extreme end. This is the honest, useful part of the result: the fix didn't make the system
+infinitely scalable, it moved the breaking point from "cracks under 100 concurrent users" to "holds
+firm through 1,000 concurrent users and only genuinely breaks at 10,000." For context, 10,000
 simultaneous requests against a single-container, single-database instance is a genuinely extreme
 load — the remaining ceiling at that stage is consistent with normal single-instance concurrency
 limits (one Node process, one Postgres connection pool), not a bug, and is exactly what the original

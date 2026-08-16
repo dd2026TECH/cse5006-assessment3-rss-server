@@ -13,8 +13,8 @@
     </TestPlan>
     <hashTree>
       <ConfigTestElement guiclass="HttpDefaultsGui" testclass="ConfigTestElement" testname="HTTP Request Defaults" enabled="true">
-        <stringProp name="HTTPSampler.domain">localhost</stringProp>
-        <stringProp name="HTTPSampler.port">4080</stringProp>
+        <stringProp name="HTTPSampler.domain">${__P(domain,localhost)}</stringProp>
+        <stringProp name="HTTPSampler.port">${__P(port,4080)}</stringProp>
         <stringProp name="HTTPSampler.protocol">http</stringProp>
         <stringProp name="HTTPSampler.connect_timeout">10000</stringProp>
         <stringProp name="HTTPSampler.response_timeout">15000</stringProp>
