@@ -107,6 +107,32 @@ export default async function DashboardPage() {
             IP-address-based, since there&apos;s no login system on this API.
           </p>
 
+          <section aria-labelledby="requests-by-endpoint-heading">
+            <h2 id="requests-by-endpoint-heading" className={styles.sectionHeading}>
+              Requests by endpoint
+            </h2>
+            <p className={styles.caption}>
+              Which API routes are actually getting hit, and how often — the same breakdown Jaeger
+              and Zipkin show per individual request, aggregated here across all of them. Top 10.
+            </p>
+            <ul className={styles.barList}>
+              {stats.usage.requestsByPath.map((row) => (
+                <li key={row.path} className={styles.barRow}>
+                  <span className={styles.barLabel}>{row.path}</span>
+                  <span className={styles.barTrack}>
+                    <span
+                      className={styles.barFill}
+                      style={{
+                        width: `${maxScale(row.requests, stats.usage.requestsByPath)}%`,
+                      }}
+                    />
+                  </span>
+                  <span className={styles.barValue}>{row.requests}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+
           <div className={styles.columns}>
             <section aria-labelledby="requests-per-feed-heading">
               <h2 id="requests-per-feed-heading" className={styles.sectionHeading}>
