@@ -7,6 +7,7 @@ against `http://localhost/dashboard` on the Dockerised stack (the newest page th
 |---|---|---|
 | **Before** (`before-dashboard.json`) | 96/100 | `color-contrast` — 3 items |
 | **After** (`after-dashboard.json`) | 100/100 | none |
+| **Assessment 2 page, re-checked later** (`after-assessment-2.json`) | 100/100 | none (see below) |
 
 ## What Lighthouse found
 
@@ -39,6 +40,29 @@ deliberately darker than the originals specifically to clear 4.5:1 against their
 now reference these tokens. Dark-theme equivalents were added at the same time (lighter text on a
 dark tinted background) even though Lighthouse only audited the light theme by default — the same
 low-contrast-pair mistake would otherwise just reappear the first time someone tested dark mode.
+
+## The same mistake reappeared on the assessment pages — and the fix this time
+
+Running Lighthouse against `/assessment-2` later turned up the **exact same low-contrast pattern**
+on its "IN PROGRESS" status pill: `color: var(--accent)` (`#2563eb`) drawn on
+`color-mix(in srgb, var(--accent) 18%, transparent)` — text-on-tint again, same as the original
+dashboard bug, just with the site's blue accent colour instead of the status colours. It existed on
+`/assessment-1`, `/assessment-2`, `/assessment-3` (each with its own near-identical CSS module) and
+in the shared `AssessmentOverview` component's `.statusInProgress`/`.statusComplete` badges (used by
+`/assessment-4`) — four separate places with the same bug, because the earlier fix only tokenised
+the *dashboard's* colours, not the site's general-purpose accent colour.
+
+**Fix:** added a fourth token pair, `--status-info-{bg,text}` (light theme: `#1e40af` text on
+`#dbe6fb`; dark theme: `#93c5fd` on `#1e2a4a`), following the exact same pattern as the
+warning/error/ok tokens, and pointed all four "in progress" badges at it instead of `var(--accent)`.
+`AssessmentOverview`'s `.statusComplete` (a hardcoded `#2e9e5b` green with the same text-on-tint
+shape) was switched to reuse the already-verified `--status-ok-*` tokens rather than inventing a
+fifth colour. Re-running Lighthouse against `/assessment-2` confirms `color-contrast` now passes
+(`"score": 1` in `after-assessment-2.json`).
+
+**The lesson, worth saying on camera:** a contrast fix scoped to one page can leave the same root
+cause live everywhere else that copy-pasted the same CSS pattern — checking Lighthouse against more
+than one page after a fix is what caught this, not a one-off audit.
 
 ## Reproducing
 

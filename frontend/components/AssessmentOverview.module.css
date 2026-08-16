@@ -30,13 +30,13 @@
 }
 
 .statusInProgress {
-  background: color-mix(in srgb, var(--accent) 18%, transparent);
-  color: var(--accent);
+  background: var(--status-info-bg);
+  color: var(--status-info-text);
 }
 
 .statusComplete {
-  background: color-mix(in srgb, #2e9e5b 18%, transparent);
-  color: #2e9e5b;
+  background: var(--status-ok-bg);
+  color: var(--status-ok-text);
 }
 
 .statusUpcoming {

@@ -23,6 +23,8 @@
   --status-error-text: #991b1b;
   --status-ok-bg: #e6f4ea;
   --status-ok-text: #0d6832;
+  --status-info-bg: #dbe6fb;
+  --status-info-text: #1e40af;
 }
 
 /* Dark theme when the user has explicitly chosen it (cookie/localStorage).
@@ -47,6 +49,8 @@
   --status-error-text: #f87171;
   --status-ok-bg: #143a1f;
   --status-ok-text: #4ade80;
+  --status-info-bg: #1e2a4a;
+  --status-info-text: #93c5fd;
 }
 
 @media (prefers-color-scheme: dark) {
