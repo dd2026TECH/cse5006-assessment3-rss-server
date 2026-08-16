@@ -33,4 +33,4 @@ echo "Seeding..."
 npm run db:seed
 
 echo "Starting API..."
-exec npm run dev
+exec npm run start
